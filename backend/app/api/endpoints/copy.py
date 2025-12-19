@@ -22,6 +22,31 @@ class CopyResponse(BaseModel):
     context_used: list = []
     logs: list = []
 
+class BrainstormRequest(BaseModel):
+    idea: str
+    platform: str = "facebook"
+
+@router.post("/brainstorm")
+async def brainstorm_themes(request: BrainstormRequest):
+    prompt = f"""
+    你是一位社群媒體創意總監。使用者有一個初步的想法："{request.idea}"
+    請針對 {request.platform} 平台，提供 3 個不同的貼文切入點或主題建議。
+    每個建議請包含：
+    1. 主題名稱
+    2. 核心訴求 (為什麼這個切入點會吸引人)
+    3. 建議的內容大綱
+    
+    請用繁體中文回答，並以 Markdown 格式呈現。
+    """
+    
+    content = await llm_service.generate_text(
+        prompt=prompt,
+        system_prompt="你是一位專業的社群媒體創意總監，擅長發想引人入勝的貼文主題。",
+        model="gemini-3-flash-preview",
+        provider="google"
+    )
+    return {"suggestions": content}
+
 @router.post("/generate", response_model=CopyResponse)
 async def generate_copy(request: CopyRequest):
     if request.platform.lower() not in PLATFORM_PROMPTS:
